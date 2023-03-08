@@ -33,7 +33,7 @@ public partial class Slots<T> where T: IComparable<T>
         if (last.Value.To.CompareTo(slot.From) < 0) return;
 
         // skip all nodes that are before the beginning of the slot and are not affected
-        while (node is not null && node.Value.To.CompareTo(slot.From) <= 0) node = node.Next;
+        while (node?.Value.To.CompareTo(slot.From) <= 0) node = node.Next;
 
         // makes the compiler happy
         Debug.Assert(node != null, nameof(node) + " != null");
@@ -45,22 +45,22 @@ public partial class Slots<T> where T: IComparable<T>
         if (node.Value.From.CompareTo(slot.From) < 0)
         {
             var v = node.Value;
-            var insertedNode = new Slot<T>(v.From, slot.From, v.Value);
-            var newCurrentNode = new Slot<T>(slot.From, v.To, v.Value);
+            var insertedNode = new Slot<T>(From: v.From, To: slot.From, Value: v.Value);
+            var newCurrentNode = new Slot<T>(From: slot.From, To: v.To, Value: v.Value);
             _internalList.AddBefore(node: node, insertedNode);
             var newNode = _internalList.AddBefore(node, newCurrentNode);
             _internalList.Remove(node);
             node = newNode;
         }
 
-        while (node is not null && node.Value.From.CompareTo(slot.To) < 0)
+        while (node?.Value.From.CompareTo(slot.To) < 0)
         {
             var v = node.Value;
             // split back if necessary
             if (slot.To.CompareTo(node.Value.To) < 0)
             {
-                var leftPart = new Slot<T>(v.From, slot.To, v.Value + slot.Value);
-                var remainingRightPart = new Slot<T>(slot.To, v.To, v.Value);
+                var leftPart = new Slot<T>(From: v.From, To: slot.To, Value: v.Value + slot.Value);
+                var remainingRightPart = new Slot<T>(From: slot.To, To: v.To, Value: v.Value);
                 var leftNode = _internalList.AddBefore(node, leftPart);
                 _internalList.AddBefore(node, remainingRightPart);
                 _internalList.Remove(node);
@@ -68,7 +68,7 @@ public partial class Slots<T> where T: IComparable<T>
                 return; // return because we're done
             }
 
-            var newSlotValue = new Slot<T>(v.From, v.To, v.Value + slot.Value);
+            var newSlotValue = new Slot<T>(From: v.From, To: v.To, Value: v.Value + slot.Value);
             var newNode = _internalList.AddBefore(node, newSlotValue);
             _internalList.Remove(node);
             node = newNode.Next;
@@ -82,10 +82,11 @@ public partial class Slots<T> where T: IComparable<T>
         var prev = node.Previous;
         var next = node.Next;
 
-        if (prev is not null
-            && next is not null
-            && prev.Value.Value == node.Value.Value
-            && next.Value.Value == node.Value.Value)
+        var prevVal   = prev?.Value.Value;
+        var nextValue = next?.Value.Value;
+        var nodeValue = node.Value.Value;
+
+        if (prev is not null && next is not null && prevVal == nodeValue && nextValue == nodeValue)
         {
             // merge all 3 to a single Node
             var mergedSlot = new Slot<T>(prev.Value.From, next.Value.To, node.Value.Value);
@@ -94,7 +95,7 @@ public partial class Slots<T> where T: IComparable<T>
             _internalList.Remove(node);
             _internalList.Remove(next);
         }
-        else if (prev is not null && prev.Value.Value == node.Value.Value)
+        else if (prev?.Value.Value == node.Value.Value)
         {
             // merge only with previous node
             var mergedSlot = new Slot<T>(prev.Value.From, node.Value.To, node.Value.Value);
@@ -102,7 +103,7 @@ public partial class Slots<T> where T: IComparable<T>
             _internalList.Remove(prev);
             _internalList.Remove(node);
         }
-        else if (next is not null && next.Value.Value == node.Value.Value)
+        else if (next?.Value.Value == node.Value.Value)
         {
             // merge only with next node
             var mergedSlot = new Slot<T>(node.Value.From, next.Value.To, node.Value.Value);
